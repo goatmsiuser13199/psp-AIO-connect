@@ -24,6 +24,8 @@ public sealed class ControlPanelForm : Form
     private readonly NotifyIcon _tray;
     private bool _exitRequested;
     private bool _hiddenToTray;
+    private Thread? _showWatcher;
+    private volatile bool _watchShow;
 
     public ControlPanelForm(HardwareSampler sampler, bool enableUsb, int intervalMs)
     {
@@ -328,14 +330,43 @@ public sealed class ControlPanelForm : Form
         _timer.Interval = Math.Max(_intervalMs, 1000);
     }
 
+    public void StartShowSignalWatcher(EventWaitHandle showEvent)
+    {
+        _watchShow = true;
+        _showWatcher = new Thread(() =>
+        {
+            while (_watchShow)
+            {
+                if (!showEvent.WaitOne(500))
+                    continue;
+                if (!_watchShow)
+                    break;
+                try
+                {
+                    BeginInvoke(RestoreFromTray);
+                }
+                catch
+                {
+                }
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "psp-connect-show"
+        };
+        _showWatcher.Start();
+    }
+
     private void RestoreFromTray()
     {
         _hiddenToTray = false;
         _timer.Interval = _intervalMs;
         ShowInTaskbar = true;
-        Show();
+        if (!Visible)
+            Show();
         WindowState = FormWindowState.Normal;
         Activate();
+        BringToFront();
     }
 
     private void ExitFromTray()
@@ -417,6 +448,7 @@ public sealed class ControlPanelForm : Form
 
     private void Cleanup()
     {
+        _watchShow = false;
         _timer.Stop();
         _timer.Dispose();
         _theme.Save();

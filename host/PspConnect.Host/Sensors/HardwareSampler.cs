@@ -11,6 +11,7 @@ public sealed class HardwareSampler : IDisposable
     private readonly bool _mock;
     private readonly Random _rng = new();
     private uint _seq;
+    private int _cpuTempRank = -1;
 
     public HardwareSampler(bool mock)
     {
@@ -24,13 +25,15 @@ public sealed class HardwareSampler : IDisposable
             IsGpuEnabled = true,
             IsMemoryEnabled = false,
             IsStorageEnabled = false,
-            IsMotherboardEnabled = true,
+            IsMotherboardEnabled = false,
             IsControllerEnabled = false,
             IsNetworkEnabled = false,
             IsBatteryEnabled = false,
             IsPsuEnabled = false
         };
         _computer.Open();
+        _computer.Accept(_visitor);
+        _computer.Accept(_visitor);
     }
 
     public MetricsPacket Sample()
@@ -57,6 +60,8 @@ public sealed class HardwareSampler : IDisposable
         float? gpuTemp = null;
         float? vramUsed = null;
         float? vramTotal = null;
+        _cpuTempRank = -1;
+
         foreach (var hardware in _computer.Hardware)
             Walk(hardware);
 
@@ -94,14 +99,9 @@ public sealed class HardwareSampler : IDisposable
                             sensor.Name.Contains("Memory Used", StringComparison.OrdinalIgnoreCase))
                             vramUsed ??= value;
                         if (sensor.SensorType == SensorType.SmallData &&
-                            (sensor.Name.Contains("Memory Total", StringComparison.OrdinalIgnoreCase) ||
-                             sensor.Name.Contains("Memory Free", StringComparison.OrdinalIgnoreCase)))
-                        {
-                            if (sensor.Name.Contains("Total", StringComparison.OrdinalIgnoreCase))
-                                vramTotal ??= value;
-                        }
+                            sensor.Name.Contains("Memory Total", StringComparison.OrdinalIgnoreCase))
+                            vramTotal ??= value;
                         break;
-
                 }
             }
 
@@ -122,8 +122,11 @@ public sealed class HardwareSampler : IDisposable
         return packet;
     }
 
-    private static void PreferCpuTemp(ref float? cpuTemp, string name, float value)
+    private void PreferCpuTemp(ref float? cpuTemp, string name, float value)
     {
+        if (value < 1f || value > 125f)
+            return;
+
         var rank = name.Contains("Package", StringComparison.OrdinalIgnoreCase) ? 100
             : name.Contains("Tctl", StringComparison.OrdinalIgnoreCase) ? 95
             : name.Contains("Tdie", StringComparison.OrdinalIgnoreCase) ? 90
@@ -132,21 +135,15 @@ public sealed class HardwareSampler : IDisposable
             : name.Contains("CCD", StringComparison.OrdinalIgnoreCase) ? 60
             : name.Contains("Distance to TjMax", StringComparison.OrdinalIgnoreCase) ? -1
             : name.Contains("Core #", StringComparison.OrdinalIgnoreCase) ? 40
-            : 10;
+            : -1;
         if (rank < 0)
             return;
 
-        if (cpuTemp is null)
+        if (cpuTemp is null || rank > _cpuTempRank || (rank == _cpuTempRank && value > cpuTemp.Value))
         {
             cpuTemp = value;
-            return;
+            _cpuTempRank = rank;
         }
-
-        // Prefer higher-ranked sensors; keep Package/Average over a random core.
-        if (rank >= 70)
-            cpuTemp = value;
-        else if (rank >= 40)
-            cpuTemp = Math.Max(cpuTemp.Value, value);
     }
 
     private static void ReadPhysicalRam(out float usedMb, out float totalMb)

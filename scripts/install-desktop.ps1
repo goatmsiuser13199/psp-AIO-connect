@@ -2,6 +2,12 @@ $ErrorActionPreference = "Stop"
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $exe = Join-Path $root "publish\host\PspConnect.Host.exe"
 
+$pawnIoKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO"
+if (-not (Test-Path $pawnIoKey)) {
+    Write-Host "Installation de PawnIO (requis pour la temp CPU package)..."
+    winget install --id namazso.PawnIO -e --silent --accept-package-agreements --accept-source-agreements | Out-Host
+}
+
 if (-not (Test-Path $exe)) {
     Write-Host "Publication de l'app..."
     Get-Process PspConnect.Host -ErrorAction SilentlyContinue | Stop-Process -Force

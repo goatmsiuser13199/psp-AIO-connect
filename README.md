@@ -20,7 +20,9 @@ Raccourci Bureau (double-clic) :
 .\scripts\install-desktop.ps1
 ```
 
-Puis double-clic sur **psp-connect** sur le Bureau.
+Puis double-clic sur **psp-connect** sur le Bureau (UAC admin : requis pour la temp CPU).
+
+La temp CPU package passe par **PawnIO** (`namazso.PawnIO` via winget). Sans ça, LHM ne lit pas les MSR Intel/AMD — le host n’affiche plus de fausse zone ACPI.
 
 Ou en ligne de commande :
 
@@ -30,7 +32,7 @@ dotnet run --project host/PspConnect.Host
 .\publish\host\PspConnect.Host.exe
 ```
 
-- Coche les métriques (CPU, GPU, RAM, VRAM, disque, temps, FPS)
+- Coche les métriques (CPU, GPU, RAM, VRAM, temps)
 - Choisis les couleurs (fond, accent, texte, barres)
 - Preview 480×272 en direct
 - Thème sauvé dans `%AppData%/psp-connect/theme.json`
