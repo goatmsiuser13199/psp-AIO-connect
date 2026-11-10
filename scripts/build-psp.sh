@@ -14,4 +14,14 @@ cd "$ROOT/psp"
 make clean || true
 make -j"$(nproc)"
 ls -la EBOOT.PBP
-echo "OK: $ROOT/psp/EBOOT.PBP"
+
+STICK="$ROOT/COPY-TO-MEMORY-STICK/PSP/GAME/psp-connect"
+mkdir -p "$STICK"
+cp -f EBOOT.PBP "$STICK/EBOOT.PBP"
+if [[ -f usb_prx/usb.prx ]]; then
+  cp -f usb_prx/usb.prx "$STICK/usb.prx"
+elif [[ -f usb.prx ]]; then
+  cp -f usb.prx "$STICK/usb.prx"
+fi
+ls -la "$STICK"
+echo "OK: $STICK"

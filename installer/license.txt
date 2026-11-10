@@ -1,5 +1,8 @@
 psp-connect
+===========
 
+FR
+--
 Logiciel fourni "tel quel", sans garantie.
 
 - Homebrew PSP : necessite un Custom Firmware. A tes risques.
@@ -7,3 +10,13 @@ Logiciel fourni "tel quel", sans garantie.
 - Zadig et PawnIO sont des outils tiers, avec leurs propres licences.
 
 En installant, tu acceptes d'utiliser ce projet en connaissance de cause.
+
+EN
+--
+Software provided "as is", without warranty.
+
+- PSP homebrew requires Custom Firmware. Use at your own risk.
+- The Windows app requests administrator rights only to read CPU temperature (via PawnIO).
+- Zadig and PawnIO are third-party tools with their own licenses.
+
+By installing, you accept using this project accordingly.

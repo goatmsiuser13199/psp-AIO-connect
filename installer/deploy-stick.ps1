@@ -1,10 +1,10 @@
 $ErrorActionPreference = "Stop"
-$homebrew = Join-Path $PSScriptRoot "homebrew"
-$eboot = Join-Path $homebrew "EBOOT.PBP"
-$prx = Join-Path $homebrew "usb.prx"
+$pack = Join-Path $PSScriptRoot "COPY-TO-MEMORY-STICK"
+$eboot = Join-Path $pack "PSP\GAME\psp-connect\EBOOT.PBP"
+$prx = Join-Path $pack "PSP\GAME\psp-connect\usb.prx"
 
 if (-not (Test-Path $eboot) -or -not (Test-Path $prx)) {
-    Write-Host "Fichiers homebrew manquants."
+    Write-Host "Dossier COPY-TO-MEMORY-STICK incomplet."
     exit 1
 }
 

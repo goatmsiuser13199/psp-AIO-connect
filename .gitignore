@@ -21,11 +21,13 @@ psp/PARAM.SFO
 psp/**/*.o
 psp/**/*.elf
 psp/**/*.prx
-!dist/EBOOT.PBP
-!dist/usb.prx
+
+# keep stick pack versioned
+!COPY-TO-MEMORY-STICK/PSP/GAME/psp-connect/EBOOT.PBP
+!COPY-TO-MEMORY-STICK/PSP/GAME/psp-connect/usb.prx
 
 installer/payload/host/
-installer/payload/homebrew/
+installer/payload/COPY-TO-MEMORY-STICK/
 
 tools/*.exe
 tools/*.zip

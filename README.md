@@ -1,89 +1,103 @@
 # psp-connect
 
-Transforme une **PSP** (CFW) en **écran AIO** pour ton PC : CPU, GPU, RAM, VRAM et températures en live, via câble USB.
-
-Ce n’est **pas** un second moniteur Windows. Aucune fenêtre ne peut s’y coller — uniquement le dashboard que tu configures sur le PC.
+**Language:** **English** | [Français](README.fr.md)
 
 <p align="center">
   <img src="assets/logo-circle-256.png" alt="psp-connect" width="96" height="96">
 </p>
 
-## Ce qu’il te faut
+Turn a **PSP** (CFW) into an **AIO-style display** for your PC: live CPU, GPU, RAM, VRAM and temperatures over USB.
+
+This is **not** a Windows secondary monitor — only the dashboard you configure on the PC.
+
+## Root files
+
+| Path | Purpose |
+| --- | --- |
+| **`psp-connect-setup.exe`** | Windows installer |
+| **`COPY-TO-MEMORY-STICK/`** | Folder to copy onto the Memory Stick |
+| `README.md` | This guide |
+
+```text
+COPY-TO-MEMORY-STICK/
+  README.txt
+  PSP/
+    GAME/
+      psp-connect/
+        EBOOT.PBP
+        usb.prx
+```
+
+## Requirements
 
 | | |
 | --- | --- |
-| PSP | 2000 / 3000 recommandée, **Custom Firmware** (PRO / ME / Infinity…) |
-| Câble | USB mini-B **data** (pas charge-only) |
-| Stick | Memory Stick avec un dossier `PSP/GAME/` |
+| PSP | 2000 / 3000 recommended, **Custom Firmware** |
+| Cable | USB mini-B **data** (not charge-only) |
+| Stick | Memory Stick |
 | PC | Windows 10/11 **64-bit** |
-| Admin | L’app demande l’UAC **uniquement pour afficher la température CPU** (via PawnIO). Sans admin, le reste marche, la temp CPU reste vide. |
+| Admin | UAC is **only for CPU temperature** (PawnIO). Without admin, everything else works; CPU temp stays empty. |
 
-## Installation
+## Install
 
-1. Lance **`psp-connect-setup.exe`** (à la racine du projet / release)
-2. Suis l’installateur (options : .NET 8, **PawnIO**, copie Memory Stick, **Zadig**)
-3. Lis *Après install*, puis lance l’app
+### 1. Memory Stick
 
-> **UAC :** les droits admin servent **uniquement** à afficher la température CPU.
+Copy **`COPY-TO-MEMORY-STICK/PSP`** to the root of your stick (merge with an existing `PSP` folder if needed).
 
-### Étapes PSP
+### 2. PC app
 
-1. Homebrew : `PSP/GAME/psp-connect/` (`EBOOT.PBP` + `usb.prx`)
-2. Sur la PSP : lance **psp-connect**, branche le USB (pas le mode USB du XMB)
-3. **Zadig** → Options → List All Devices → **`054C:C001`** → **WinUSB**
-4. Lance **psp-connect** sur le PC
+Run **`psp-connect-setup.exe`** (enable .NET / PawnIO / Zadig if offered).
 
-## Utilisation
+### 3. Connect
 
-- Tuiles **CPU · GPU · RAM · VRAM**
-- Couleurs : **Fond, RAM, Texte, Titre, CPU, GPU, VRAM**
-- **Sauver** = profil ; **Renommer** / **Supprimer** (confirmation)
-- **Origine** = couleurs par défaut
-- Fermer / minimiser → **tray** ; **Quitter** via le menu icône
+1. On the PSP: **Game → psp-connect**, then plug USB (stay in the app — not XMB USB Connection)
+2. **Zadig** → List All Devices → **`054C:C001`** → **WinUSB**
+3. Launch **psp-connect** on the PC (accept UAC for CPU temp)
 
-Profils : `%AppData%\psp-connect\`
+## Usage
 
-| Flag | Effet |
+- Toggle tiles **CPU · GPU · RAM · VRAM**
+- Colors: **Background, RAM, Text, Title, CPU, GPU, VRAM**
+- **Save / Rename / Delete** profiles (with confirmation)
+- **Origine** = reset default colors
+- Close / minimize → **tray**; **Quit** from the tray menu
+
+Profiles: `%AppData%\psp-connect\`
+
+| Flag | Effect |
 | --- | --- |
-| `--mock` | Fausses métriques |
-| `--no-usb` | Preview PC seul |
-| `--interval 500` | Rafraîchissement (ms) |
+| `--mock` | Fake metrics |
+| `--no-usb` | PC preview only |
+| `--interval 500` | Refresh rate (ms) |
 
-## Dépannage
+## Troubleshooting
 
-| Problème | Piste |
+| Issue | Fix |
 | --- | --- |
-| PSP noire / pas de data | `usb.prx` à côté de l’EBOOT, Zadig WinUSB sur `054C:C001`, host **après** l’app PSP |
-| Temp CPU vide | Accepte l’UAC (admin = temp CPU) + **PawnIO** |
-| Stick non détectée | Copie depuis `Program Files\psp-connect\homebrew\` |
+| No data on PSP | Keep `usb.prx`, Zadig WinUSB on `054C:C001`, start host **after** the PSP app |
+| Empty CPU temp | Accept UAC admin + install **PawnIO** |
+| Stick not found | Open `COPY-TO-MEMORY-STICK` (also under `Program Files\psp-connect\`) |
 
-## Contenu du dépôt
+## Dev / sources
 
-| Chemin | Rôle |
+| Folder | Role |
 | --- | --- |
-| `psp-connect-setup.exe` | **Installateur Windows** (NSIS) |
-| `dist/` | Homebrew : `EBOOT.PBP` + `usb.prx` |
-| `installer/` | Script NSIS |
-| `host/` | Sources app .NET 8 |
-| `psp/` | Sources homebrew |
-| `protocol/` | Paquet USB 64 o |
-
-## Build depuis les sources
+| `host/` | .NET 8 Windows app |
+| `psp/` | Homebrew sources |
+| `installer/` | NSIS script |
+| `protocol/` | USB packet |
+| `scripts/` | Build helpers |
 
 ```powershell
-winget install NSIS.NSIS   # une fois
-.\scripts\build-installer.ps1
+winget install NSIS.NSIS
+.\scripts\build-installer.ps1   # → psp-connect-setup.exe
 ```
-
-→ régénère `psp-connect-setup.exe` à la racine.
-
-**PSP** (WSL + [pspdev](https://github.com/pspdev/pspdev)) :
 
 ```bash
 bash scripts/setup-pspdev.sh
-bash scripts/build-psp.sh
+bash scripts/build-psp.sh       # updates COPY-TO-MEMORY-STICK
 ```
 
-## Licence / usage
+## License
 
-Projet solo, fourni tel quel. Homebrew = CFW à tes risques. PawnIO et Zadig = outils tiers, licences séparées.
+Solo project, provided as-is. CFW / PawnIO / Zadig = at your own risk / third-party licenses.

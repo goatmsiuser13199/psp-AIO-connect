@@ -1,0 +1,30 @@
+psp-connect — after install / apres installation
+================================================
+
+1) Memory Stick
+   FR: Ouvre le dossier COPY-TO-MEMORY-STICK
+       Copie le dossier "PSP" a la racine de ta Memory Stick
+       (ou lance deploy-stick.ps1 si la stick est branchee).
+   EN: Open the COPY-TO-MEMORY-STICK folder
+       Copy the "PSP" folder to the root of your Memory Stick
+       (or run deploy-stick.ps1 if the stick is plugged in).
+
+   Expected / Attendu :
+     PSP\GAME\psp-connect\EBOOT.PBP
+     PSP\GAME\psp-connect\usb.prx
+
+2) PSP
+   FR: Quitte le mode USB stick du XMB → lance Game → psp-connect → rebranche le USB (reste dans l'app).
+   EN: Leave XMB USB Connection → launch Game → psp-connect → plug USB again (stay in the app).
+
+3) USB driver (once / une seule fois)
+   Zadig → Options → List All Devices
+   Device 054C:C001 → WinUSB → Install / Replace Driver
+
+4) PC app
+   FR: Lance "psp-connect". Accepte l'UAC : admin = UNIQUEMENT la temperature CPU.
+       Sans admin, le dashboard marche, temp CPU vide.
+   EN: Launch "psp-connect". Accept UAC: admin = CPU temperature ONLY.
+       Without admin, the dashboard still works; CPU temp stays empty.
+
+https://github.com/goatmsiuser13199/psp-connect

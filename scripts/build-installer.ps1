@@ -12,10 +12,11 @@ if (-not $makensis) {
     exit 1
 }
 
-$eboot = Join-Path $root "dist\EBOOT.PBP"
-$prx = Join-Path $root "dist\usb.prx"
+$stickGame = Join-Path $root "COPY-TO-MEMORY-STICK\PSP\GAME\psp-connect"
+$eboot = Join-Path $stickGame "EBOOT.PBP"
+$prx = Join-Path $stickGame "usb.prx"
 if (-not (Test-Path $eboot) -or -not (Test-Path $prx)) {
-    Write-Error "dist\EBOOT.PBP et dist\usb.prx requis."
+    Write-Error "COPY-TO-MEMORY-STICK\PSP\GAME\psp-connect\ (EBOOT.PBP + usb.prx) requis."
 }
 
 Write-Host "== Publish host ==" -ForegroundColor Cyan
@@ -30,15 +31,13 @@ if (-not (Test-Path (Join-Path $publish "PspConnect.Host.exe"))) {
 
 Write-Host "== Stage payload ==" -ForegroundColor Cyan
 $payloadHost = Join-Path $root "installer\payload\host"
-$payloadHb = Join-Path $root "installer\payload\homebrew"
-Remove-Item -Recurse -Force $payloadHost -ErrorAction SilentlyContinue
+$payloadStick = Join-Path $root "installer\payload\COPY-TO-MEMORY-STICK"
+Remove-Item -Recurse -Force $payloadHost, $payloadStick -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $payloadHost | Out-Null
-New-Item -ItemType Directory -Force -Path $payloadHb | Out-Null
 
 Copy-Item -Recurse -Force (Join-Path $publish "*") $payloadHost
 Remove-Item (Join-Path $payloadHost "*.pdb") -ErrorAction SilentlyContinue
-Copy-Item -Force $eboot (Join-Path $payloadHb "EBOOT.PBP")
-Copy-Item -Force $prx (Join-Path $payloadHb "usb.prx")
+Copy-Item -Recurse -Force (Join-Path $root "COPY-TO-MEMORY-STICK") $payloadStick
 
 Write-Host "== NSIS ==" -ForegroundColor Cyan
 & $makensis "/V2" (Join-Path $root "installer\psp-connect.nsi")
