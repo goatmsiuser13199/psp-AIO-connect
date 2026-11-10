@@ -5,13 +5,13 @@ namespace PspConnect.Host.Protocol;
 public sealed class DisplayTheme
 {
     public DisplayFlags Flags { get; set; } = DisplayFlags.Default;
-    public Color Background { get; set; } = Color.FromArgb(10, 12, 16);
-    public Color Accent { get; set; } = Color.FromArgb(64, 210, 190);
-    public Color Text { get; set; } = Color.FromArgb(236, 242, 250);
-    public Color Muted { get; set; } = Color.FromArgb(120, 132, 148);
-    public Color CpuBar { get; set; } = Color.FromArgb(94, 176, 255);
-    public Color GpuBar { get; set; } = Color.FromArgb(72, 214, 168);
-    public Color VramBar { get; set; } = Color.FromArgb(180, 140, 255);
+    public Color Background { get; set; } = Color.FromArgb(18, 22, 28);
+    public Color Accent { get; set; } = Color.FromArgb(70, 180, 140);
+    public Color Text { get; set; } = Color.FromArgb(230, 236, 245);
+    public Color Muted { get; set; } = Color.FromArgb(140, 150, 165);
+    public Color CpuBar { get; set; } = Color.FromArgb(80, 170, 255);
+    public Color GpuBar { get; set; } = Color.FromArgb(120, 210, 110);
+    public Color VramBar { get; set; } = Color.FromArgb(170, 130, 200);
 
     private static string StorePath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -28,6 +28,18 @@ public sealed class DisplayTheme
         GpuBar = GpuBar,
         VramBar = VramBar
     };
+
+    public void ResetColors()
+    {
+        var d = new DisplayTheme();
+        Background = d.Background;
+        Accent = d.Accent;
+        Text = d.Text;
+        Muted = d.Muted;
+        CpuBar = d.CpuBar;
+        GpuBar = d.GpuBar;
+        VramBar = d.VramBar;
+    }
 
     public void Save()
     {
@@ -89,7 +101,7 @@ public sealed class DisplayTheme
             Muted = Color.FromArgb(Muted),
             CpuBar = Color.FromArgb(CpuBar),
             GpuBar = Color.FromArgb(GpuBar),
-            VramBar = VramBar != 0 ? Color.FromArgb(VramBar) : Color.FromArgb(180, 140, 255)
+            VramBar = VramBar != 0 ? Color.FromArgb(VramBar) : Color.FromArgb(170, 130, 200)
         };
     }
 }

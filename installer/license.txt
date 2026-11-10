@@ -1,0 +1,9 @@
+psp-connect
+
+Logiciel fourni "tel quel", sans garantie.
+
+- Homebrew PSP : necessite un Custom Firmware. A tes risques.
+- L'application Windows demande les droits administrateur uniquement pour lire la temperature CPU (via PawnIO).
+- Zadig et PawnIO sont des outils tiers, avec leurs propres licences.
+
+En installant, tu acceptes d'utiliser ce projet en connaissance de cause.

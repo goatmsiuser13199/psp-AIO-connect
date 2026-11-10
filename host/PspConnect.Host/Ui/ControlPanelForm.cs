@@ -14,6 +14,7 @@ public sealed class ControlPanelForm : Form
     private readonly Label _statusDot;
     private readonly Label _statusLabel;
     private readonly DisplayTheme _theme;
+    private readonly ThemeProfileStore _profiles;
     private readonly bool _enableUsb;
     private readonly Dictionary<DisplayFlags, Button> _metricChips = new();
     private readonly Dictionary<string, Panel> _swatches = new();
@@ -26,13 +27,15 @@ public sealed class ControlPanelForm : Form
     private bool _hiddenToTray;
     private Thread? _showWatcher;
     private volatile bool _watchShow;
+    private ThemedProfilePicker? _profilePicker;
 
     public ControlPanelForm(HardwareSampler sampler, bool enableUsb, int intervalMs)
     {
         _sampler = sampler;
         _enableUsb = enableUsb;
         _intervalMs = Math.Clamp(intervalMs, 500, 5000);
-        _theme = DisplayTheme.LoadOrDefault();
+        _profiles = ThemeProfileStore.Load();
+        _theme = _profiles.CurrentTheme;
         _theme.Flags &= ~(DisplayFlags.ShowDisk | DisplayFlags.ShowFps);
         if (_enableUsb)
             _usb = new UsbMetricsSink();
@@ -40,7 +43,7 @@ public sealed class ControlPanelForm : Form
         Text = "psp-connect";
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
-        BackColor = Color.FromArgb(10, 12, 16);
+        BackColor = Color.FromArgb(18, 22, 28);
         ForeColor = Color.FromArgb(236, 242, 250);
         Font = new Font("Segoe UI", 9f);
         StartPosition = FormStartPosition.CenterScreen;
@@ -72,25 +75,44 @@ public sealed class ControlPanelForm : Form
         side.Controls.Add(SectionLabel("Theme", 14, y, 220));
         y += 26;
         y = AddSwatch(side, y, "Fond", () => _theme.Background, c => _theme.Background = c);
-        y = AddSwatch(side, y, "Accent", () => _theme.Accent, c => _theme.Accent = c);
+        y = AddSwatch(side, y, "RAM", () => _theme.Accent, c => _theme.Accent = c);
         y = AddSwatch(side, y, "Texte", () => _theme.Text, c => _theme.Text = c);
-        y = AddSwatch(side, y, "Mute", () => _theme.Muted, c => _theme.Muted = c);
+        y = AddSwatch(side, y, "Titre", () => _theme.Muted, c => _theme.Muted = c);
         y = AddSwatch(side, y, "CPU", () => _theme.CpuBar, c => _theme.CpuBar = c);
         y = AddSwatch(side, y, "GPU", () => _theme.GpuBar, c => _theme.GpuBar = c);
         y = AddSwatch(side, y, "VRAM", () => _theme.VramBar, c => _theme.VramBar = c);
-        y += 14;
+        y += 10;
+
+        side.Controls.Add(SectionLabel("Profils", 14, y, 220));
+        y += 24;
+        _profilePicker = new ThemedProfilePicker
+        {
+            Left = 14,
+            Top = y,
+            Width = 220
+        };
+        _profilePicker.SelectionChanged += (_, _) => OnProfileSelected();
+        side.Controls.Add(_profilePicker);
+        y += 38;
 
         var saveBtn = QuietButton(14, y, 106, "Sauver");
-        saveBtn.Click += (_, _) =>
-        {
-            _theme.Save();
-            _statusLabel!.Text = "Theme enregistre";
-        };
+        saveBtn.Click += (_, _) => SaveProfile();
         side.Controls.Add(saveBtn);
 
-        var presetBtn = QuietButton(128, y, 106, "Studio");
-        presetBtn.Click += (_, _) => ApplyStudioPreset();
-        side.Controls.Add(presetBtn);
+        var resetBtn = QuietButton(128, y, 106, "Origine");
+        resetBtn.Click += (_, _) => ResetThemeColors();
+        side.Controls.Add(resetBtn);
+        y += 34;
+
+        var renameBtn = QuietButton(14, y, 106, "Renommer");
+        renameBtn.Click += (_, _) => RenameProfile();
+        side.Controls.Add(renameBtn);
+
+        var deleteBtn = QuietButton(128, y, 106, "Supprimer");
+        deleteBtn.Click += (_, _) => DeleteProfile();
+        side.Controls.Add(deleteBtn);
+
+        RefreshProfilePicker();
 
         // Force layout so AutoSize side reports final height.
         side.PerformLayout();
@@ -149,7 +171,7 @@ public sealed class ControlPanelForm : Form
             previewFrame.Right + 16,
             Math.Max(statusTop + 36, side.Bottom + 16));
 
-        MigrateLegacyTheme();
+        MigrateStudioTheme();
         RefreshSwatches();
 
         _timer = new System.Windows.Forms.Timer { Interval = _intervalMs };
@@ -269,9 +291,9 @@ public sealed class ControlPanelForm : Form
     private void RefreshSwatches()
     {
         SetSwatch("Fond", _theme.Background);
-        SetSwatch("Accent", _theme.Accent);
+        SetSwatch("RAM", _theme.Accent);
         SetSwatch("Texte", _theme.Text);
-        SetSwatch("Mute", _theme.Muted);
+        SetSwatch("Titre", _theme.Muted);
         SetSwatch("CPU", _theme.CpuBar);
         SetSwatch("GPU", _theme.GpuBar);
         SetSwatch("VRAM", _theme.VramBar);
@@ -375,24 +397,101 @@ public sealed class ControlPanelForm : Form
         Close();
     }
 
-    private void ApplyStudioPreset()
+    private void ResetThemeColors()
     {
-        _theme.Background = Color.FromArgb(10, 12, 16);
-        _theme.Accent = Color.FromArgb(64, 210, 190);
-        _theme.Text = Color.FromArgb(236, 242, 250);
-        _theme.Muted = Color.FromArgb(120, 132, 148);
-        _theme.CpuBar = Color.FromArgb(94, 176, 255);
-        _theme.GpuBar = Color.FromArgb(72, 214, 168);
-        _theme.VramBar = Color.FromArgb(180, 140, 255);
+        _theme.ResetColors();
         RefreshSwatches();
-        _statusLabel.Text = "Preset studio";
+        _statusLabel.Text = "Couleurs d'origine";
     }
 
-    private void MigrateLegacyTheme()
+    private void MigrateStudioTheme()
     {
-        if (_theme.Background.ToArgb() != Color.FromArgb(18, 22, 28).ToArgb())
+        if (_theme.Background.ToArgb() != Color.FromArgb(10, 12, 16).ToArgb())
             return;
-        ApplyStudioPreset();
+        _theme.ResetColors();
+        _profiles.UpdateActive(_theme);
+    }
+
+    private void RefreshProfilePicker()
+    {
+        if (_profilePicker is null)
+            return;
+        _profilePicker.SetItems(
+            _profiles.Profiles.Select(p => (p.Id, p.Name)),
+            _profiles.ActiveId ?? "");
+    }
+
+    private void ApplyThemeCopy(DisplayTheme source)
+    {
+        _theme.Flags = source.Flags & ~(DisplayFlags.ShowDisk | DisplayFlags.ShowFps);
+        _theme.Background = source.Background;
+        _theme.Accent = source.Accent;
+        _theme.Text = source.Text;
+        _theme.Muted = source.Muted;
+        _theme.CpuBar = source.CpuBar;
+        _theme.GpuBar = source.GpuBar;
+        _theme.VramBar = source.VramBar;
+        RefreshSwatches();
+        foreach (var (flag, chip) in _metricChips)
+            StyleChip(chip, _theme.Flags.HasFlag(flag));
+    }
+
+    private void OnProfileSelected()
+    {
+        if (_profilePicker is null)
+            return;
+        if (!_profiles.Select(_profilePicker.SelectedId))
+            return;
+        ApplyThemeCopy(_profiles.CurrentTheme);
+        _statusLabel.Text = $"Profil · {_profiles.Active?.Name}";
+    }
+
+    private void SaveProfile()
+    {
+        var suggested = _profiles.Active?.Name ?? "Profil";
+        var name = ThemedDialog.PromptName(this, "Sauver le profil", suggested);
+        if (name is null)
+            return;
+
+        var saved = _profiles.SaveAs(name, _theme);
+        RefreshProfilePicker();
+        _statusLabel.Text = $"Profil sauve · {saved.Name}";
+    }
+
+    private void RenameProfile()
+    {
+        var active = _profiles.Active;
+        if (active is null)
+            return;
+
+        var name = ThemedDialog.PromptName(this, "Renommer le profil", active.Name);
+        if (name is null)
+            return;
+
+        if (!_profiles.Rename(active.Id, name))
+        {
+            _statusLabel.Text = "Nom deja utilise";
+            return;
+        }
+
+        RefreshProfilePicker();
+        _statusLabel.Text = $"Profil renomme · {name}";
+    }
+
+    private void DeleteProfile()
+    {
+        var active = _profiles.Active;
+        if (active is null)
+            return;
+
+        if (!ThemedDialog.Confirm(this, "Supprimer le profil",
+                $"Supprimer le profil « {active.Name} » ?"))
+            return;
+
+        _profiles.Delete(active.Id);
+        ApplyThemeCopy(_profiles.CurrentTheme);
+        RefreshProfilePicker();
+        _statusLabel.Text = $"Profil · {_profiles.Active?.Name}";
     }
 
     private void OnTick(object? sender, EventArgs e)
@@ -451,7 +550,7 @@ public sealed class ControlPanelForm : Form
         _watchShow = false;
         _timer.Stop();
         _timer.Dispose();
-        _theme.Save();
+        _profiles.UpdateActive(_theme);
         _usb?.Dispose();
         _sampler.Dispose();
         _frame.Dispose();

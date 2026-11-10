@@ -1,66 +1,89 @@
 # psp-connect
 
-Écran **dédié** style watercooling AIO pour ta **PSP-3004 (CFW PRO)** : CPU / GPU / RAM / temps / disque en live via **USB**.
+Transforme une **PSP** (CFW) en **écran AIO** pour ton PC : CPU, GPU, RAM, VRAM et températures en live, via câble USB.
 
-Ce n’est **pas** un moniteur Windows — Chrome / jeux / apps ne peuvent pas s’y coller. Tu configures couleurs + métriques dans l’app PC ; la PSP n’affiche que ce dashboard.
+Ce n’est **pas** un second moniteur Windows. Aucune fenêtre ne peut s’y coller — uniquement le dashboard que tu configures sur le PC.
 
-## Stack
+<p align="center">
+  <img src="assets/logo-circle-256.png" alt="psp-connect" width="96" height="96">
+</p>
 
-| Couche | Techno |
+## Ce qu’il te faut
+
+| | |
 | --- | --- |
-| Host Win11 | .NET 8 panneau AIO + LibreHardwareMonitor + LibUsbDotNet |
-| Protocole v2 | paquet 64 B : métriques + flags + couleurs RGB565 |
-| PSP | homebrew kernel USB `054C:C001` · UI 480×272 |
+| PSP | 2000 / 3000 recommandée, **Custom Firmware** (PRO / ME / Infinity…) |
+| Câble | USB mini-B **data** (pas charge-only) |
+| Stick | Memory Stick avec un dossier `PSP/GAME/` |
+| PC | Windows 10/11 **64-bit** |
+| Admin | L’app demande l’UAC **uniquement pour afficher la température CPU** (via PawnIO). Sans admin, le reste marche, la temp CPU reste vide. |
 
-## App PC (panneau AIO)
+## Installation
 
-Raccourci Bureau (double-clic) :
+1. Lance **`psp-connect-setup.exe`** (à la racine du projet / release)
+2. Suis l’installateur (options : .NET 8, **PawnIO**, copie Memory Stick, **Zadig**)
+3. Lis *Après install*, puis lance l’app
+
+> **UAC :** les droits admin servent **uniquement** à afficher la température CPU.
+
+### Étapes PSP
+
+1. Homebrew : `PSP/GAME/psp-connect/` (`EBOOT.PBP` + `usb.prx`)
+2. Sur la PSP : lance **psp-connect**, branche le USB (pas le mode USB du XMB)
+3. **Zadig** → Options → List All Devices → **`054C:C001`** → **WinUSB**
+4. Lance **psp-connect** sur le PC
+
+## Utilisation
+
+- Tuiles **CPU · GPU · RAM · VRAM**
+- Couleurs : **Fond, RAM, Texte, Titre, CPU, GPU, VRAM**
+- **Sauver** = profil ; **Renommer** / **Supprimer** (confirmation)
+- **Origine** = couleurs par défaut
+- Fermer / minimiser → **tray** ; **Quitter** via le menu icône
+
+Profils : `%AppData%\psp-connect\`
+
+| Flag | Effet |
+| --- | --- |
+| `--mock` | Fausses métriques |
+| `--no-usb` | Preview PC seul |
+| `--interval 500` | Rafraîchissement (ms) |
+
+## Dépannage
+
+| Problème | Piste |
+| --- | --- |
+| PSP noire / pas de data | `usb.prx` à côté de l’EBOOT, Zadig WinUSB sur `054C:C001`, host **après** l’app PSP |
+| Temp CPU vide | Accepte l’UAC (admin = temp CPU) + **PawnIO** |
+| Stick non détectée | Copie depuis `Program Files\psp-connect\homebrew\` |
+
+## Contenu du dépôt
+
+| Chemin | Rôle |
+| --- | --- |
+| `psp-connect-setup.exe` | **Installateur Windows** (NSIS) |
+| `dist/` | Homebrew : `EBOOT.PBP` + `usb.prx` |
+| `installer/` | Script NSIS |
+| `host/` | Sources app .NET 8 |
+| `psp/` | Sources homebrew |
+| `protocol/` | Paquet USB 64 o |
+
+## Build depuis les sources
 
 ```powershell
-.\scripts\install-desktop.ps1
+winget install NSIS.NSIS   # une fois
+.\scripts\build-installer.ps1
 ```
 
-Puis double-clic sur **psp-connect** sur le Bureau (UAC admin : requis pour la temp CPU).
+→ régénère `psp-connect-setup.exe` à la racine.
 
-La temp CPU package passe par **PawnIO** (`namazso.PawnIO` via winget). Sans ça, LHM ne lit pas les MSR Intel/AMD — le host n’affiche plus de fausse zone ACPI.
-
-Ou en ligne de commande :
-
-```powershell
-dotnet run --project host/PspConnect.Host
-# ou
-.\publish\host\PspConnect.Host.exe
-```
-
-- Coche les métriques (CPU, GPU, RAM, VRAM, temps)
-- Choisis les couleurs (fond, accent, texte, barres)
-- Preview 480×272 en direct
-- Thème sauvé dans `%AppData%/psp-connect/theme.json`
-- Preset **ice** inclus
-
-Options : `--mock`, `--no-usb`, `--interval 500`
-
-## Brancher la PSP (one-shot)
-
-```powershell
-.\scripts\go-live.ps1
-```
-
-Le script attend la Memory Stick, copie l’EBOOT, ouvre Zadig, lance le host.
-
-Manuel :
-1. `dist/EBOOT.PBP` → `ms0:/PSP/GAME/psp-connect/`
-2. Lance **psp-connect** sur la PSP
-3. USB → Zadig → **WinUSB** sur `054C:C001`
-4. Host AIO — la PSP suit ton thème live
-
-## Build homebrew (WSL)
+**PSP** (WSL + [pspdev](https://github.com/pspdev/pspdev)) :
 
 ```bash
 bash scripts/setup-pspdev.sh
 bash scripts/build-psp.sh
 ```
 
-## Pourquoi pas un 2ᵉ écran Windows ?
+## Licence / usage
 
-Un vrai moniteur étendu laisserait Windows y poser des fenêtres. Ici la PSP reçoit uniquement un **paquet de stats + thème** : affichage verrouillé au dashboard.
+Projet solo, fourni tel quel. Homebrew = CFW à tes risques. PawnIO et Zadig = outils tiers, licences séparées.

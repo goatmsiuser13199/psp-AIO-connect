@@ -24,6 +24,9 @@ psp/**/*.prx
 !dist/EBOOT.PBP
 !dist/usb.prx
 
+installer/payload/host/
+installer/payload/homebrew/
+
 tools/*.exe
 tools/*.zip
 publish/
